@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+<script>
+Canvas = (function() {
+	var dimension;
+	
+	function getCellClass(x,y) {
+		return ["cell", x, "_", y].join("");
+	}
+	
+	function getCellSelector(x,y) {
+		return "#" + getCellClass(x,y);
+	}
+
+	return {
+		initialize: function(canvas, dim) {
+			dimension = dim;
+			var $canvas = $(canvas).text(""),
+				$table = $("<table/>").appendTo($canvas);
+			
+			for (var i=0; i<dimension; i++) {
+				var $row = $("<tr/>").appendTo($table);
+				for (var j=0; j<dimension; j++) {
+					$("<td id=\"" + getCellClass(j, i) + "\"/>").appendTo($row);
+				}
+			}
+		},
+		draw: function(x, y, text) {
+			var drawSuccess = !!($(getCellSelector(x,y)).text(text).length);
+			if (!drawSuccess)
+				console.error("Tried to draw off the canvas");
+		}
+	};		
+})();
+
+Turtle = (function() {
+	var stepCount, c, x, y, heading,
+		directions = {
+			w: {x: -1, y: 0},
+			e: {x: 1, y: 0},
+			n: {x: 0, y: -1},
+			s: {x: 0, y: 1}
+		};
+		rotations = {
+			w: "n",
+			e: "s",
+			n: "e",
+			s: "w"
+		};
+		
+	function draw() {
+		c.draw(x, y, stepCount++);
+	}
+	
+	return {
+		initialize: function(canvas, initialX, initialY, initialHeading) {
+			stepCount = 0;
+			c = canvas;
+			x = initialX;
+			y = initialY;
+			heading = initialHeading;
+		},
+		step: function() {
+			x += directions[heading].x;
+			y += directions[heading].y;
+			draw();
+		},
+		rotate: function() {
+			heading = rotations[heading];
+		},
+		drawSpiral: function(maxSteps) {
+			var itr = 0, stepsTaken = 1;
+			draw();
+			while (stepsTaken <= maxSteps) {
+				itr++;
+				for (var j=0, jMax=Math.ceil(itr/2); j<jMax; j++) {
+					this.step();
+					if (++stepsTaken > maxSteps)
+						break;
+				}
+				this.rotate();
+			}
+		}
+	};
+})();
+$(function() {
+	$("form").submit(function(ev) {
+		var stepsToTake = $("[name=steps]").val() - 0,
+			canvasDimension = 11,
+			centerOnAxis = 5.
+			startingDirection = $("[name=starting-direction]").val();
+		Canvas.initialize("#canvas", canvasDimension);
+		Turtle.initialize(Canvas, centerOnAxis, centerOnAxis, startingDirection);
+		Turtle.drawSpiral(stepsToTake);
+		ev.preventDefault();
+		return false;
+	});
+});
+
+</script>
+<style>
+td {
+	height: 24px;
+	width: 24px;
+	line-height: 21px;
+	border: thin solid black;
+	text-align: center;
+}
+</style>
+</head>
+<body>
+<div id=controls>
+<pre>
+------------
+-Exercise 3-
+------------
+Write some code that accepts an integer and prints the integers from 0
+to that input integer in a spiral format.
+
+For example, if I supplied 24 the output would be:
+
+20 21 21 23 24
+19  6  7  8  9
+18  5  0  1 10
+17  4  3  2 11
+16 15 14 13 12
+
+</pre>
+<form action="#">
+	Steps to take: <input name=steps type=text></input>
+	Starting direction: <select name="starting-direction">
+		<option>n</option>
+		<option>w</option>
+		<option>s</option>
+		<option selected="selected">e</option>
+	</select>
+	<button type="submit">Go</button>
+</form>
+</div>
+<div id=canvas></div>
+</body>
+</html>
