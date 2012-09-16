@@ -4,101 +4,57 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
 <script>
-Canvas = (function() {
-	var dimension;
-	
-	function getCellClass(x,y) {
-		return ["cell", x, "_", y].join("");
-	}
-	
-	function getCellSelector(x,y) {
-		return "#" + getCellClass(x,y);
-	}
-
-	return {
-		initialize: function(canvas, dim) {
-			dimension = dim;
-			var $canvas = $(canvas).text(""),
-				$table = $("<table/>").appendTo($canvas);
-			
-			for (var i=0; i<dimension; i++) {
-				var $row = $("<tr/>").appendTo($table);
-				for (var j=0; j<dimension; j++) {
-					$("<td id=\"" + getCellClass(j, i) + "\"/>").appendTo($row);
-				}
-			}
-		},
-		draw: function(x, y, text) {
-			var drawSuccess = !!($(getCellSelector(x,y)).text(text).length);
-			if (!drawSuccess)
-				console.error("Tried to draw off the canvas");
-		}
-	};		
-})();
-
-Turtle = (function() {
-	var stepCount, c, x, y, heading,
-		directions = {
-			w: {x: -1, y: 0},
-			e: {x: 1, y: 0},
-			n: {x: 0, y: -1},
-			s: {x: 0, y: 1}
-		};
-		rotations = {
-			w: "n",
-			e: "s",
-			n: "e",
-			s: "w"
-		};
-		
-	function draw() {
-		c.draw(x, y, stepCount++);
-	}
+Onion = function(layers) {
+	// TODO Generalize the code to remove the assumptions that we are spiraling clockwise and start moving to the east.
+	var	maxValue = Math.pow(2*layers+1, 2) - 1,
+		minValue = layers>0 ? Math.pow(2*layers-1,2) : 0,
+		brCornerValue = maxValue - 6*layers,
+		blCornerValue = maxValue - 4*layers,
+		tlCornerValue = maxValue - 2*layers,
+		trCornerValue = maxValue,
+		innerLayer = layers>0 ? Onion(layers-1) : null;
 	
 	return {
-		initialize: function(canvas, initialX, initialY, initialHeading) {
-			stepCount = 0;
-			c = canvas;
-			x = initialX;
-			y = initialY;
-			heading = initialHeading;
-		},
-		step: function() {
-			x += directions[heading].x;
-			y += directions[heading].y;
-			draw();
-		},
-		rotate: function() {
-			heading = rotations[heading];
-		},
-		drawSpiral: function(maxSteps) {
-			var itr = 0, stepsTaken = 1;
-			draw();
-			while (stepsTaken <= maxSteps) {
-				itr++;
-				for (var j=0, jMax=Math.ceil(itr/2); j<jMax; j++) {
-					this.step();
-					if (++stepsTaken > maxSteps)
-						break;
-				}
-				this.rotate();
+		getValue: function(row, col) {
+			if (row === -layers) { // top row
+				return tlCornerValue + col + layers;
+			} else if (row === layers) { // bottom row
+				return blCornerValue - (col + layers);
+			} else if (col === -layers) { // left column
+				return tlCornerValue - (row + layers);
+			} else if (col === layers) { //right column
+				return brCornerValue + row - layers;
+			} else {
+				return innerLayer.getValue(row, col);
 			}
 		}
 	};
-})();
+};
+
+function getNumberOfLayersRequired(x) {
+	return Math.ceil((Math.ceil(Math.sqrt(x+1)) - 1) / 2);
+}
+
 $(function() {
 	$("form").submit(function(ev) {
-		var stepsToTake = $("[name=steps]").val() - 0,
-			canvasDimension = 11,
-			centerOnAxis = 5.
-			startingDirection = $("[name=starting-direction]").val();
-		Canvas.initialize("#canvas", canvasDimension);
-		Turtle.initialize(Canvas, centerOnAxis, centerOnAxis, startingDirection);
-		Turtle.drawSpiral(stepsToTake);
+		var $canvas = $("#canvas").text(""),
+			$table = $("<table/>").appendTo($canvas),
+			stepsToTake = $("[name=steps]").val() - 0,
+			dimension = getNumberOfLayersRequired(stepsToTake),
+			myOnion = Onion(dimension);
+		
+		for (var i=-dimension; i<=dimension; i++) {
+			var $row = $("<tr/>").appendTo($table);
+			for (var j=-dimension; j<=dimension; j++) {
+				var val = myOnion.getValue(i,j);
+				$("<td>"+ (val<=stepsToTake ? val : "") +"</td>").appendTo($row);
+			}
+		}
 		ev.preventDefault();
 		return false;
 	});
 });
+
 
 </script>
 <style>
@@ -128,10 +84,12 @@ For example, if I supplied 24 the output would be:
 17  4  3  2 11
 16 15 14 13 12
 
+Alternative implementation: Slower, but much less memory required.
+
 </pre>
 <form action="#">
 	Steps to take: <input name=steps type=text></input>
-	Starting direction: <select name="starting-direction">
+	Starting direction: <select name="starting-direction" disabled="disabled">
 		<option>n</option>
 		<option>w</option>
 		<option>s</option>
