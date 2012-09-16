@@ -31,16 +31,18 @@ Onion = function(layers) {
 	};
 };
 
-function getNumberOfLayersRequired(x) {
+Onion.getNumberOfLayersRequired = function(x) {
 	return Math.ceil((Math.ceil(Math.sqrt(x+1)) - 1) / 2);
-}
+};
+	
+
 
 $(function() {
 	$("form").submit(function(ev) {
 		var $canvas = $("#canvas").text(""),
 			$table = $("<table/>").appendTo($canvas),
 			stepsToTake = $("[name=steps]").val() - 0,
-			dimension = getNumberOfLayersRequired(stepsToTake),
+			dimension = Onion.getNumberOfLayersRequired(stepsToTake),
 			myOnion = Onion(dimension);
 		
 		for (var i=-dimension; i<=dimension; i++) {
@@ -68,7 +70,16 @@ td {
 </style>
 </head>
 <body>
-<div id=controls>
+<div>
+<h4>Alternative implementation</h4>
+<ul>
+<li>Slower</li>
+<li>The array of values doesn't have to be pre-computed and held in memory</li>
+<li>Better for random access</li>
+<li>Better when memory usage needs to be limited</li>
+</ul>
+</div>
+
 <pre>
 ------------
 -Exercise 3-
@@ -84,9 +95,8 @@ For example, if I supplied 24 the output would be:
 17  4  3  2 11
 16 15 14 13 12
 
-Alternative implementation: Slower, but much less memory required.
-
 </pre>
+<div id=controls>
 <form action="#">
 	Steps to take: <input name=steps type=text></input>
 	Starting direction: <select name="starting-direction" disabled="disabled">

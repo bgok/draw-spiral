@@ -1,3 +1,9 @@
 draw-spiral
 ===========
-This is available as a webpage at http://hom.uncul.us/draw-spiral/.
+Alternative implementation
+
+- Slower
+- The array of values doesn't have to be pre-computed and held in memory
+- Better for random access
+- Better when memory usage needs to be limited
+
